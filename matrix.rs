@@ -56,6 +56,17 @@ impl<T> Mat2<T> {
     }
 }
 
+impl<T: Mul<T, T> + Add<T, T> + Clone> Mat2<T> {
+    /// Add a row `i` scaled by `a` to another row `j`. Fails if either of the indices are out of
+    /// bounds.
+    fn add_scaled(&mut self, i: uint, j: uint, a: T) {
+        let r = self.data[i].iter().enumerate().map(|(i, x)| x.clone() * a + self.data[j][i])
+                    .to_owned_vec();
+        self.set_row(j, r);
+    }
+
+}
+
 #[cfg(test)]
 mod tests {
     use super::Mat2;
@@ -84,5 +95,18 @@ mod tests {
         let mut x = Mat2::from_vec(~[~[1i, 1, 1]]).unwrap();
         x.scale_row(0, 3);
         assert!(x.get_row(0) == &[3, 3, 3]);
+    }
+
+    #[test]
+    fn test_add_scaled() {
+        let mut x = Mat2::from_vec(
+            ~[
+                ~[1i, 2, 3],
+                ~[4, 5, 6],
+                ~[7, 8, 9]
+            ]).unwrap();
+        x.add_scaled(0, 1, 1);
+        assert!(x.get_row(0) == &[1, 2, 3]);
+        assert!(x.get_row(1) == &[5, 7, 9]);
     }
 }
