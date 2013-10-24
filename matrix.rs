@@ -1,5 +1,6 @@
 use std::vec;
 
+/// A two-dimensional matrix.
 pub struct Mat2<T> {
     priv data: ~[~[T]],
     priv n: uint,
@@ -8,6 +9,7 @@ pub struct Mat2<T> {
 
 // TODO: remove clone bound?
 impl<T: Default+Clone> Mat2<T> {
+    /// Create a new (n x m) matrix, using the Default implementation of T
     pub fn new(n: uint, m: uint) -> Mat2<T> {
         let data = vec::from_elem(n, vec::from_elem(m, Default::default()));
 
@@ -16,6 +18,8 @@ impl<T: Default+Clone> Mat2<T> {
 }
 
 impl<T> Mat2<T> {
+    /// Create a new matrix from a vector. Returns None if the inner vectors don't all have the same
+    /// length.
     pub fn from_vec(m: ~[~[T]]) -> Option<Mat2<T>> {
         let l = m[0].len();
         let n = m.len();
@@ -27,20 +31,24 @@ impl<T> Mat2<T> {
         }
     }
 
+    /// Swap two rows. Fails if either of the indices are out of bounds.
     pub fn swap_rows(&mut self, i: uint, j: uint) {
         self.data.swap(i, j);
     }
 
+    /// Set a row to the given vector. Fails if `i` is out of bounds.
     pub fn set_row(&mut self, i: uint, r: ~[T]) {
         self.data[i] = r;
     }
 
+    /// Get the row at `i` as a slice. Fails if `i` is out of bounds.
     pub fn get_row<'a>(&'a mut self, i: uint) -> &'a [T] {
         self.data[i].as_slice()
     }
 }
 
  impl<T: Mul<T, T>> Mat2<T> {
+     /// Scale a row by a scalar.
     pub fn scale_row(&mut self, i: uint, j: T) {
         for idx in range(0, self.data[i].len()) {
             self.data[i][idx] = self.data[i][idx] * j;
