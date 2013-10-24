@@ -47,11 +47,11 @@ impl<T> Mat2<T> {
     }
 }
 
- impl<T: Mul<T, T>> Mat2<T> {
-     /// Scale a row by a scalar.
-    pub fn scale_row(&mut self, i: uint, j: T) {
+impl<T: Mul<T, T>> Mat2<T> {
+    /// Scale a row by a scalar.
+    pub fn scale_row(&mut self, i: uint, a: T) {
         for idx in range(0, self.data[i].len()) {
-            self.data[i][idx] = self.data[i][idx] * j;
+            self.data[i][idx] = self.data[i][idx] * a;
         }
     }
 }
