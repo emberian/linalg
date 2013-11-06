@@ -2,4 +2,7 @@
 
 #[link(name="linalg")];
 
+#[feature(globs)];
+
 pub mod matrix;
+pub mod system;
