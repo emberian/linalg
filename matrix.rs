@@ -7,6 +7,19 @@ pub struct Mat2<T> {
     priv m: uint,
 }
 
+pub struct RowIterator<'self, T> {
+    priv mat: &'self Mat2<T>,
+    priv i: uint,
+}
+
+impl<'self, T> Iterator<&'self [T]> for RowIterator<'self, T> {
+    fn next(&mut self) -> Option<&'self [T]> {
+        let r = self.mat.get_row_opt(self.i);
+        self.i += 1;
+        r
+    }
+}
+
 // TODO: remove clone bound?
 impl<T: Default+Clone> Mat2<T> {
     /// Create a new (n x m) matrix, using the Default implementation of T
@@ -53,6 +66,19 @@ impl<T> Mat2<T> {
     /// Get the row at `i` as a slice. Fails if `i` is out of bounds.
     pub fn get_row<'a>(&'a mut self, i: uint) -> &'a [T] {
         self.data[i].as_slice()
+    }
+
+    /// Get the row at `i` as a slice. Returns `None` if `i` is out of bounds.
+    pub fn get_row_opt<'a>(&'a self, i: uint) -> Option<&'a [T]> {
+        self.data.get_opt(i).map(|o| o.as_slice())
+    }
+
+    /// Iterate over the rows of a matrix.
+    pub fn row_iter<'a>(&'a self) -> RowIterator<'a, T> {
+        RowIterator {
+            mat: self,
+            i: 0
+        }
     }
 }
 
