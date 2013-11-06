@@ -31,6 +31,14 @@ impl<T: Default+Clone> Mat2<T> {
 }
 
 impl<T> Mat2<T> {
+    /// Create a new (n x m) matrix, using `f` to create each element. `f` is given the coordinate
+    /// (row, column) for each element it's constructing.
+    pub fn new_with(n: uint, m: uint, f: &fn(uint, uint) -> T) -> Mat2<T> {
+        let data = vec::from_fn(n, |n| vec::from_fn(m, |m| f(n,m)));
+
+        Mat2 { data: data, n: n, m: m }
+    }
+
     /// Create a new matrix from a vector. Returns None if the inner vectors don't all have the same
     /// length, or if the vector is empty.
     pub fn from_vec(m: ~[~[T]]) -> Option<Mat2<T>> {
@@ -113,9 +121,13 @@ mod tests {
 
     #[test]
     fn test_cons() {
-        let _x: Mat2<int> = Mat2::new(3, 2);
-        let x: Option<Mat2<int>> = Mat2::from_vec(~[]);
-        assert_eq!(x, None);
+        let x: Mat2<int> = Mat2::new(3, 2);
+
+        let y: Option<Mat2<int>> = Mat2::from_vec(~[]);
+        assert_eq!(y, None);
+
+        let z: Mat2<int> = Mat2::new_with(3, 2, |_,_| 0);
+        assert_eq!(x, z);
     }
 
     #[test]
