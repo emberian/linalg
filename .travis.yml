@@ -5,4 +5,4 @@ install:
     - sudo apt-get install rust-nightly
 script:
     - rustc --test lib.rs
-    - ./lib
+    - ./linalg
