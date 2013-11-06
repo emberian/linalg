@@ -36,6 +36,10 @@ impl<T> Mat2<T> {
         }
     }
 
+    pub fn get_dimension(&self) -> (uint, uint) {
+        (self.m, self.n)
+    }
+
     /// Swap two rows. Fails if either of the indices are out of bounds.
     pub fn swap_rows(&mut self, i: uint, j: uint) {
         self.data.swap(i, j);
@@ -86,6 +90,12 @@ mod tests {
         let _x: Mat2<int> = Mat2::new(3, 2);
         let x: Option<Mat2<int>> = Mat2::from_vec(~[]);
         assert_eq!(x, None);
+    }
+
+    #[test]
+    fn test_get_dimension() {
+        let x: Mat2<int> = Mat2::from_vec(~[~[1, 2], ~[3, 4]]).unwrap();
+        assert_eq!(x.get_dimension(), (2, 2));
     }
 
     #[test]
