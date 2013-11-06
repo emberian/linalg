@@ -151,6 +151,21 @@ mod tests {
     }
 
     #[test]
+    fn test_row_iter() {
+        let x = Mat2::from_vec(
+            ~[
+                ~[1i, 2, 3],
+                ~[4, 5, 6],
+                ~[7, 8, 9]
+            ]).unwrap();
+        let mut it = x.row_iter();
+        assert_eq!(it.next().unwrap(), &[1,2,3]);
+        assert_eq!(it.next().unwrap(), &[4,5,6]);
+        assert_eq!(it.next().unwrap(), &[7,8,9]);
+        assert_eq!(it.next(), None);
+    }
+
+    #[test]
     fn test_scale_row() {
         let mut x = Mat2::from_vec(~[~[1i, 1, 1]]).unwrap();
         x.scale_row(0, 3);
