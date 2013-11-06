@@ -19,10 +19,15 @@ impl<T: Default+Clone> Mat2<T> {
 
 impl<T> Mat2<T> {
     /// Create a new matrix from a vector. Returns None if the inner vectors don't all have the same
-    /// length.
+    /// length, or if the vector is empty.
     pub fn from_vec(m: ~[~[T]]) -> Option<Mat2<T>> {
-        let l = m[0].len();
         let n = m.len();
+
+        if n == 0 {
+            return None;
+        }
+
+        let l = m[0].len();
 
         if m.iter().all(|x| x.len() == l) {
             Some(Mat2 { data: m, n: n, m: l })
@@ -56,6 +61,12 @@ impl<T: Mul<T, T>> Mat2<T> {
     }
 }
 
+impl<T: Eq> Eq for Mat2<T> {
+    fn eq(&self, other: &Mat2<T>) -> bool {
+        self.data == other.data
+    }
+}
+
 impl<T: Mul<T, T> + Add<T, T> + Clone> Mat2<T> {
     /// Add a row `i` scaled by `a` to another row `j`. Fails if either of the indices are out of
     /// bounds.
@@ -64,7 +75,6 @@ impl<T: Mul<T, T> + Add<T, T> + Clone> Mat2<T> {
                     .to_owned_vec();
         self.set_row(j, r);
     }
-
 }
 
 #[cfg(test)]
@@ -74,6 +84,8 @@ mod tests {
     #[test]
     fn test_cons() {
         let _x: Mat2<int> = Mat2::new(3, 2);
+        let x: Option<Mat2<int>> = Mat2::from_vec(~[]);
+        assert_eq!(x, None);
     }
 
     #[test]
