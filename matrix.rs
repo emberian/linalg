@@ -64,7 +64,7 @@ impl<T> Mat2<T> {
     }
 
     /// Get the row at `i` as a slice. Fails if `i` is out of bounds.
-    pub fn get_row<'a>(&'a mut self, i: uint) -> &'a [T] {
+    pub fn get_row<'a>(&'a self, i: uint) -> &'a [T] {
         self.data[i].as_slice()
     }
 
@@ -136,6 +136,18 @@ mod tests {
         assert!(x.get_row(0) == &[4, 5, 6]);
         assert!(x.get_row(1) == &[1, 2, 3]);
         assert!(x.get_row(2) == &[7, 8, 9]);
+    }
+
+    #[test]
+    fn test_get_row() {
+        let x = Mat2::from_vec(
+            ~[
+                ~[1i, 2, 3],
+                ~[4, 5, 6],
+                ~[7, 8, 9]
+            ]).unwrap();
+        assert!(x.get_row(0) == &[1, 2, 3]);
+        assert!(x.get_row_opt(3) == None);
     }
 
     #[test]
