@@ -83,21 +83,29 @@ impl<T> Mat2<T> {
         self.data.get_opt(i).map(|o| o.as_slice())
     }
 
-    /// Append a column to the matrix.
-    pub fn append_column(&mut self, column: ~[T]) {
+    /// Append a column to the matrix. Returns true if the insert succeeded, false otherwise.
+    pub fn append_column(&mut self, column: ~[T]) -> bool {
         // this makes sure the unsafe_mut_ref below will be valid
-        assert_eq!(self.n, column.len());
-        self.m += 1;
+        if self.n != column.len() { return false; }
+
+        self.n += 1;
 
         for (idx, itm) in column.move_iter().enumerate() {
             unsafe { (*self.data.unsafe_mut_ref(idx)).push(itm); }
         }
+
+        true
     }
 
-    /// Append a row to the matrix.
-    pub fn append_row(&mut self, row: ~[T]) {
+    /// Append a row to the matrix. Returns true if the insert succeeded, false otherwise.
+    pub fn append_row(&mut self, row: ~[T]) -> bool {
+        if self.m != row.len() { return false; }
+
         self.n += 1;
+
         self.data.push(row);
+
+        true
     }
 
     /// Iterate over the rows of a matrix.
@@ -190,7 +198,31 @@ mod tests {
                 ~[7, 8, 9]
             ]).unwrap();
         assert!(x.get_row(0) == &[1, 2, 3]);
-        x.append_column(~[0, 0, 0]);
+        assert!(x.append_column(~[0, 0, 0]));
+        assert!(x.get_row(0) == &[1, 2, 3, 0]);
+
+        // non-square
+        let mut x = Mat2::from_vec(
+            ~[
+                ~[1i, 2, 3, 0],
+                ~[4, 5, 6, 0],
+                ~[7, 8, 9, 0],
+            ]).unwrap();
+        assert!(x.get_row(0) == &[1, 2, 3, 0]);
+        assert!(x.append_column(~[0, 0, 0]));
+        assert!(!x.append_column(~[0]));
+        assert!(x.get_row(0) == &[1, 2, 3, 0, 0]);
+
+        let mut x = Mat2::from_vec(
+            ~[
+                ~[1i, 2, 3],
+                ~[4, 5, 6],
+                ~[7, 8, 9],
+                ~[10, 11, 12],
+            ]).unwrap();
+        assert!(x.get_row(0) == &[1, 2, 3]);
+        assert!(x.append_column(~[0, 0, 0, 0]));
+        assert!(!x.append_column(~[0]));
         assert!(x.get_row(0) == &[1, 2, 3, 0]);
     }
 
@@ -205,9 +237,40 @@ mod tests {
         assert!(x.get_row(0) == &[1, 2, 3]);
         assert!(x.get_row_opt(3) == None);
         let mut x = x;
-        x.append_row(~[10, 11, 12]);
+        assert!(x.append_row(~[10, 11, 12]));
+        assert!(!x.append_row(~[0]));
         let x = x;
         assert!(x.get_row(3) == &[10, 11, 12]);
+
+        // non-square
+        let x = Mat2::from_vec(
+            ~[
+                ~[1i, 2, 3],
+                ~[4, 5, 6],
+                ~[7, 8, 9],
+                ~[10, 11, 12],
+            ]).unwrap();
+        assert!(x.get_row(0) == &[1, 2, 3]);
+        assert!(x.get_row_opt(4) == None);
+        let mut x = x;
+        assert!(x.append_row(~[10, 11, 12]));
+        assert!(!x.append_row(~[0]));
+        let x = x;
+        assert!(x.get_row(4) == &[10, 11, 12]);
+
+        let x = Mat2::from_vec(
+            ~[
+                ~[1i, 2, 3, 0],
+                ~[4, 5, 6, 0],
+                ~[7, 8, 9, 0]
+            ]).unwrap();
+        assert!(x.get_row(0) == &[1, 2, 3, 0]);
+        assert!(x.get_row_opt(3) == None);
+        let mut x = x;
+        assert!(x.append_row(~[10, 11, 12, 13]));
+        assert!(!x.append_row(~[0]));
+        let x = x;
+        assert!(x.get_row(3) == &[10, 11, 12, 13]);
     }
 
     #[test]
