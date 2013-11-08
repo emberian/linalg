@@ -3,6 +3,8 @@ use std::vec;
 /// A two-dimensional matrix.
 #[deriving(Clone)]
 pub struct Mat2<T> {
+    // INVARIANT: data.len() == n, data.iter().all(|v| v.len() == m)
+    // If this gets violated, shit hits the fan ASAP.
     priv data: ~[~[T]],
     priv n: uint,
     priv m: uint,
