@@ -57,6 +57,7 @@ impl<T> Mat2<T> {
         }
     }
 
+    /// Return the dimensions of the matrix, (m, n)
     pub fn get_dimension(&self) -> (uint, uint) {
         (self.m, self.n)
     }
