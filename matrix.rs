@@ -82,6 +82,16 @@ impl<T> Mat2<T> {
         self.data.get_opt(i).map(|o| o.as_slice())
     }
 
+    /// Add a column to the matrix.
+    pub fn add_column(&mut self, column: ~[T]) {
+        // this makes sure the unsafe_mut_ref below will be valid
+        assert_eq!(self.n, column.len());
+
+        for (idx, itm) in column.move_iter().enumerate() {
+            unsafe { (*self.data.unsafe_mut_ref(idx)).push(itm); }
+        }
+    }
+
     /// Iterate over the rows of a matrix.
     pub fn row_iter<'a>(&'a self) -> RowIterator<'a, T> {
         RowIterator {
@@ -161,6 +171,18 @@ mod tests {
             ]).unwrap();
         assert!(x.get_row(0) == &[1, 2, 3]);
         assert!(x.get_row_opt(3) == None);
+    }
+
+    #[test]
+    fn test_add_column() {
+        let mut x = Mat2::from_vec(
+            ~[
+                ~[1i, 2, 3],
+                ~[4, 5, 6],
+                ~[7, 8, 9]
+            ]).unwrap();
+        x.add_column(~[0, 0, 0]);
+        assert!(x.get_row(0) == &[1, 2, 3, 0]);
     }
 
     #[test]
