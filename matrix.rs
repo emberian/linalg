@@ -181,7 +181,7 @@ impl<T: Eq> Eq for Mat2<T> {
 impl<T: Mul<T, T> + Add<T, T> + Clone> Mat2<T> {
     /// Add a row `i` scaled by `a` to another row `j`. Fails if either of the indices are out of
     /// bounds.
-    fn add_scaled(&mut self, i: uint, j: uint, a: T) {
+    pub fn add_scaled(&mut self, i: uint, j: uint, a: T) {
         let r = self.data[i].iter().enumerate().map(|(i, x)| x.clone() * a + self.data[j][i])
                     .to_owned_vec();
         self.set_row(j, r);
