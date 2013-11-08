@@ -23,6 +23,25 @@ impl<'self, T> Iterator<&'self [T]> for RowIterator<'self, T> {
     }
 }
 
+pub struct ColumnIterator<'self, T> {
+    priv mat: &'self Mat2<T>,
+    priv col: uint,
+    priv i: uint,
+}
+
+impl<'self, T> Iterator<&'self T> for ColumnIterator<'self, T> {
+    fn next(&mut self) -> Option<&'self T> {
+        let r = match self.mat.data.get_opt(self.i) {
+            Some(s) => s.get_opt(self.col),
+            None => None
+        };
+
+        // handle overflow
+        if r.is_some() { self.i += 1; }
+        r
+    }
+}
+
 // TODO: remove clone bound?
 impl<T: Default+Clone> Mat2<T> {
     /// Create a new (n x m) matrix, using the Default implementation of T
@@ -127,6 +146,17 @@ impl<T> Mat2<T> {
     pub fn row_iter<'a>(&'a self) -> RowIterator<'a, T> {
         RowIterator {
             mat: self,
+            i: 0
+        }
+    }
+
+    /// Iterate over the items column `col` (0-based) of a matrix. This does *NOT* iterate over all
+    /// columns.  If you want that, transpose the matrix and `row_iter` over that (it requires the
+    /// same amount of work).
+    pub fn column_iter<'a>(&'a self, col: uint) -> ColumnIterator<'a, T> {
+        ColumnIterator {
+            mat: self,
+            col: col,
             i: 0
         }
     }
@@ -303,6 +333,33 @@ mod tests {
         assert_eq!(it.next().unwrap(), &[1,2,3]);
         assert_eq!(it.next().unwrap(), &[4,5,6]);
         assert_eq!(it.next().unwrap(), &[7,8,9]);
+        assert_eq!(it.next(), None);
+    }
+
+    #[test]
+    fn test_column_iter() {
+        let x = Mat2::from_vec(
+            ~[
+                ~[1i, 2, 3],
+                ~[4, 5, 6],
+                ~[7, 8, 9]
+            ]).unwrap();
+        let mut it = x.column_iter(0);
+        assert_eq!(it.next().unwrap(), &1);
+        assert_eq!(it.next().unwrap(), &4);
+        assert_eq!(it.next().unwrap(), &7);
+        assert_eq!(it.next(), None);
+        let mut it = x.column_iter(1);
+        assert_eq!(it.next().unwrap(), &2);
+        assert_eq!(it.next().unwrap(), &5);
+        assert_eq!(it.next().unwrap(), &8);
+        assert_eq!(it.next(), None);
+        let mut it = x.column_iter(2);
+        assert_eq!(it.next().unwrap(), &3);
+        assert_eq!(it.next().unwrap(), &6);
+        assert_eq!(it.next().unwrap(), &9);
+        assert_eq!(it.next(), None);
+        let mut it = x.column_iter(3);
         assert_eq!(it.next(), None);
     }
 
