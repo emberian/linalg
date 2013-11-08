@@ -1,4 +1,5 @@
 use std::vec;
+use std::num::{Zero, One};
 
 /// A two-dimensional matrix.
 #[deriving(Clone)]
@@ -185,6 +186,55 @@ impl<T: Mul<T, T> + Add<T, T> + Clone> Mat2<T> {
         let r = self.data[i].iter().enumerate().map(|(i, x)| x.clone() * a + self.data[j][i])
                     .to_owned_vec();
         self.set_row(j, r);
+    }
+}
+
+impl<T: Zero + One + Ord + Eq> Mat2<T> {
+    /// Test if this matrix is in Reduced Row-Echelon Form. Mostly useful in the shell or as a
+    /// helper for `Mat2::rref` (the conversion function).
+    pub fn is_rref(&self) -> bool {
+        debug!("is_rref: entry");
+        // 1.  If there is a row where every entry is zero, then this row lies below any other row
+        //     that contains a nonzero entry.
+        let zeroes_not_at_end = do self.row_iter().fold((false, false)) |tup, row| {
+            // tuple is (seen_all_zero, seen_non_zero_after_all_zero)
+            if row.iter().all(|x| *x == Zero::zero()) {
+                (true, tup.n1())
+            } else {
+                (tup.n0(), if tup.n0() { true } else { false })
+            }
+        }.n1();
+        if zeroes_not_at_end { debug!("all-zero rows not at end"); return false; }
+
+        let mut last_colidx = 0;
+        'row: for (rowidx, row) in self.row_iter().enumerate() {
+            let mut seen_leading_one = false;
+            for (leftmostidx, val) in row.iter().enumerate() {
+                if seen_leading_one { continue 'row; }
+                if *val != Zero::zero() {
+                    if *val != One::one() {
+                        debug!("is_rref: false because first non-zero item isn't one \
+                                rowidx={}, row={:?}, val={:?}", rowidx, row, *val);
+                        return false;
+                    }
+
+                    seen_leading_one = true;
+                    if leftmostidx < last_colidx { return false; }
+                    last_colidx = leftmostidx;
+                    for (colidx, colval) in self.column_iter(leftmostidx).enumerate() {
+                        debug!("cols: {:?}", self.column_iter(leftmostidx).to_owned_vec());
+                        if colidx != rowidx && *colval != Zero::zero() {
+                            // 3.  The leftmost nonzero entry of a row is the only nonzero entry
+                            //     in its column.
+                            debug!("is_rref: false b/c cond 3 violated with colidx={}, \
+                                colval={:?}, leftmostidx={}", colidx, *colval, leftmostidx);
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+        true
     }
 }
 
@@ -411,5 +461,79 @@ mod tests {
         x.add_scaled(0, 1, 1);
         assert!(x.get_row(0) == &[1, 2, 3]);
         assert!(x.get_row(1) == &[5, 7, 9]);
+    }
+
+    #[test]
+    fn test_is_rref() {
+        let x = Mat2::from_vec(
+            ~[
+                ~[1i, 2, 3],
+                ~[1, 5, 6],
+                ~[1, 8, 9]
+            ]).unwrap();
+        assert!(!x.is_rref());
+        let x = Mat2::from_vec(
+            ~[
+                ~[1i, 2, 3],
+                ~[0, 0, 0],
+                ~[1, 8, 9]
+            ]).unwrap();
+        assert!(!x.is_rref());
+        let x = Mat2::from_vec(
+            ~[
+                ~[1i, 2, 3],
+                ~[1, 5, 6],
+                ~[0, 0, 0]
+            ]).unwrap();
+        assert!(!x.is_rref());
+        let x = Mat2::from_vec(
+            ~[
+                ~[1i, 2, 3],
+                ~[0, 0, 0],
+                ~[0, 0, 0]
+            ]).unwrap();
+        assert!(x.is_rref());
+        let x = Mat2::from_vec(
+            ~[
+                ~[0i, 0, 0],
+                ~[0, 0, 0],
+                ~[0, 0, 0]
+            ]).unwrap();
+        assert!(x.is_rref());
+        let x = Mat2::from_vec(
+            ~[
+                ~[1i, 0, 0],
+                ~[0, 1, 0],
+                ~[0, 0, 1]
+            ]).unwrap();
+        assert!(x.is_rref());
+        let x = Mat2::from_vec(
+            ~[
+                ~[1i, 0, 0],
+                ~[0, 0, 1],
+                ~[0, 0, 0]
+            ]).unwrap();
+        assert!(x.is_rref());
+        let x = Mat2::from_vec(
+            ~[
+                ~[1i, 1, 0],
+                ~[0, 0, 1],
+                ~[0, 0, 0]
+            ]).unwrap();
+        assert!(x.is_rref());
+        let x = Mat2::from_vec(
+            ~[
+                ~[1i, 1, 2],
+                ~[0, 0, 1],
+                ~[0, 0, 0]
+            ]).unwrap();
+        assert!(!x.is_rref());
+        let x = Mat2::from_vec(
+            ~[
+                ~[1i, 0, 2],
+                ~[0, 1, 6],
+                ~[0, 0, 0],
+            ]).unwrap();
+        assert!(x.is_rref());
     }
 }
