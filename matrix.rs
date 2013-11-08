@@ -1,6 +1,7 @@
 use std::vec;
 
 /// A two-dimensional matrix.
+#[deriving(Clone)]
 pub struct Mat2<T> {
     priv data: ~[~[T]],
     priv n: uint,
