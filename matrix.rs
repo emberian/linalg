@@ -94,6 +94,12 @@ impl<T> Mat2<T> {
         }
     }
 
+    /// Append a row to the matrix.
+    pub fn append_row(&mut self, row: ~[T]) {
+        self.n += 1;
+        self.data.push(row);
+    }
+
     /// Iterate over the rows of a matrix.
     pub fn row_iter<'a>(&'a self) -> RowIterator<'a, T> {
         RowIterator {
@@ -186,6 +192,22 @@ mod tests {
         assert!(x.get_row(0) == &[1, 2, 3]);
         x.append_column(~[0, 0, 0]);
         assert!(x.get_row(0) == &[1, 2, 3, 0]);
+    }
+
+    #[test]
+    fn test_append_row() {
+        let x = Mat2::from_vec(
+            ~[
+                ~[1i, 2, 3],
+                ~[4, 5, 6],
+                ~[7, 8, 9]
+            ]).unwrap();
+        assert!(x.get_row(0) == &[1, 2, 3]);
+        assert!(x.get_row_opt(3) == None);
+        let mut x = x;
+        x.append_row(~[10, 11, 12]);
+        let x = x;
+        assert!(x.get_row(3) == &[10, 11, 12]);
     }
 
     #[test]
