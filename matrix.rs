@@ -108,6 +108,19 @@ impl<T> Mat2<T> {
         true
     }
 
+    /// ["Augment"](http://goo.gl/Q1hIuC) a matrix with this one. Takes the columns of `other` and
+    /// appends them to this matrix. Returns true if the augment succeeded, false otherwise.
+    pub fn augment(&mut self, other: Mat2<T>) -> bool {
+        if self.n != other.n { return false; }
+        self.m += other.m;
+
+        for (idx, row) in other.data.move_iter().enumerate() {
+            unsafe  { (*self.data.unsafe_mut_ref(idx)).push_all_move(row); }
+        }
+
+        true
+    }
+
     /// Iterate over the rows of a matrix.
     pub fn row_iter<'a>(&'a self) -> RowIterator<'a, T> {
         RowIterator {
@@ -288,6 +301,35 @@ mod tests {
         assert_eq!(it.next().unwrap(), &[1,2,3]);
         assert_eq!(it.next().unwrap(), &[4,5,6]);
         assert_eq!(it.next().unwrap(), &[7,8,9]);
+        assert_eq!(it.next(), None);
+    }
+
+    #[test]
+    fn test_augment() {
+        let mut x = Mat2::from_vec(
+            ~[
+                ~[1i, 2, 3],
+                ~[4, 5, 6],
+                ~[7, 8, 9]
+            ]).unwrap();
+        let y = Mat2::from_vec(
+            ~[
+                ~[4, 5, 6, 7],
+                ~[7, 8, 9, 10],
+                ~[10, 11, 12, 13]
+            ]).unwrap();
+        let z = Mat2::from_vec(
+            ~[
+                ~[1, 2]
+            ]).unwrap();
+
+        assert!(x.augment(y));
+        assert!(!x.augment(z));
+
+        let mut it = x.row_iter();
+        assert_eq!(it.next().unwrap(), &[1,2,3,4,5,6,7]);
+        assert_eq!(it.next().unwrap(), &[4,5,6,7,8,9,10]);
+        assert_eq!(it.next().unwrap(), &[7,8,9,10,11,12,13]);
         assert_eq!(it.next(), None);
     }
 
