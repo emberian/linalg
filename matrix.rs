@@ -18,7 +18,8 @@ pub struct RowIterator<'self, T> {
 impl<'self, T> Iterator<&'self [T]> for RowIterator<'self, T> {
     fn next(&mut self) -> Option<&'self [T]> {
         let r = self.mat.get_row_opt(self.i);
-        self.i += 1;
+        // handle overflow
+        if r.is_some() { self.i += 1; }
         r
     }
 }
