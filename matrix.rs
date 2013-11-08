@@ -155,6 +155,9 @@ mod tests {
 
         let z: Mat2<int> = Mat2::new_with(3, 2, |_,_| 0);
         assert_eq!(x, z);
+
+        let a: Option<Mat2<int>> = Mat2::from_vec(~[~[1, 2, 3], ~[1, 2]]);
+        assert_eq!(a, None);
     }
 
     #[test]
