@@ -57,7 +57,7 @@ impl<T: Default+Clone> Mat2<T> {
 impl<T> Mat2<T> {
     /// Create a new (n x m) matrix, using `f` to create each element. `f` is given the coordinate
     /// (row, column) for each element it's constructing.
-    pub fn new_with(n: uint, m: uint, f: &fn(uint, uint) -> T) -> Mat2<T> {
+    pub fn new_with(n: uint, m: uint, f: |uint, uint| -> T) -> Mat2<T> {
         let data = vec::from_fn(n, |n| vec::from_fn(m, |m| f(n,m)));
 
         Mat2 { data: data, n: n, m: m }
@@ -196,14 +196,14 @@ impl<T: Zero + One + Ord + Eq> Mat2<T> {
         debug!("is_rref: entry");
         // 1.  If there is a row where every entry is zero, then this row lies below any other row
         //     that contains a nonzero entry.
-        let zeroes_not_at_end = do self.row_iter().fold((false, false)) |tup, row| {
+        let zeroes_not_at_end = self.row_iter().fold((false, false), |tup, row| {
             // tuple is (seen_all_zero, seen_non_zero_after_all_zero)
             if row.iter().all(|x| *x == Zero::zero()) {
                 (true, tup.n1())
             } else {
                 (tup.n0(), if tup.n0() { true } else { false })
             }
-        }.n1();
+        }).n1();
         if zeroes_not_at_end { debug!("all-zero rows not at end"); return false; }
 
         let mut last_colidx = 0;
