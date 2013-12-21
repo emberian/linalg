@@ -1,5 +1,6 @@
 use std::vec;
-use std::num::{Zero, One};
+use std::fmt;
+use std::num::{Zero, One, one};
 
 /// A two-dimensional matrix.
 #[deriving(Clone)]
@@ -7,17 +8,19 @@ pub struct Mat2<T> {
     // INVARIANT: data.len() == n, data.iter().all(|v| v.len() == m)
     // If this gets violated, shit hits the fan ASAP.
     priv data: ~[~[T]],
+    /// Number of rows
     priv n: uint,
+    /// Number of columns
     priv m: uint,
 }
 
-pub struct RowIterator<'self, T> {
-    priv mat: &'self Mat2<T>,
+pub struct RowIterator<'a, T> {
+    priv mat: &'a Mat2<T>,
     priv i: uint,
 }
 
-impl<'self, T> Iterator<&'self [T]> for RowIterator<'self, T> {
-    fn next(&mut self) -> Option<&'self [T]> {
+impl<'a, T> Iterator<&'a [T]> for RowIterator<'a, T> {
+    fn next(&mut self) -> Option<&'a [T]> {
         let r = self.mat.get_row_opt(self.i);
         // handle overflow
         if r.is_some() { self.i += 1; }
@@ -25,14 +28,14 @@ impl<'self, T> Iterator<&'self [T]> for RowIterator<'self, T> {
     }
 }
 
-pub struct ColumnIterator<'self, T> {
-    priv mat: &'self Mat2<T>,
+pub struct ColumnIterator<'a, T> {
+    priv mat: &'a Mat2<T>,
     priv col: uint,
     priv i: uint,
 }
 
-impl<'self, T> Iterator<&'self T> for ColumnIterator<'self, T> {
-    fn next(&mut self) -> Option<&'self T> {
+impl<'a, T> Iterator<&'a T> for ColumnIterator<'a, T> {
+    fn next(&mut self) -> Option<&'a T> {
         let r = match self.mat.data.get_opt(self.i) {
             Some(s) => s.get_opt(self.col),
             None => None
@@ -51,6 +54,20 @@ impl<T: Default+Clone> Mat2<T> {
         let data = vec::from_elem(n, vec::from_elem(m, Default::default()));
 
         Mat2 { data: data, n: n, m: m }
+    }
+}
+
+impl<T: fmt::Default> fmt::Default for Mat2<T> {
+    fn fmt(s: &Mat2<T>, f: &mut fmt::Formatter) {
+        let b = &mut f.buf;
+        b.write(bytes!("[\n"));
+        for row in s.row_iter() {
+            for it in row.iter() {
+                write!(*b, "{} ", *it);
+            }
+            b.write(bytes!("\n"));
+        }
+        b.write(bytes!("]\n"));
     }
 }
 
@@ -99,6 +116,22 @@ impl<T> Mat2<T> {
     /// Get the row at `i` as a slice. Fails if `i` is out of bounds.
     pub fn get_row<'a>(&'a self, i: uint) -> &'a [T] {
         self.data[i].as_slice()
+    }
+
+    /// Get a reference to the element at row `i`, column `j` (both starting at 0). Returns `None`
+    /// if `i` or `j` are out of bounds.
+    pub fn get_opt<'a>(&'a self, i: uint, j: uint) -> Option<&'a T> {
+        if (i > self.m || j > self.n) {
+            None
+        } else {
+            Some(&self.data[i][j])
+        }
+    }
+
+    /// Get a reference to the element at row `i`, column `j` (both starting at 0). Fails if `i` or
+    /// `j` are out of bounds.
+    pub fn get<'a>(&'a self, i: uint, j: uint) -> &'a T {
+        &self.data[i][j]
     }
 
     /// Get the row at `i` as a slice. Returns `None` if `i` is out of bounds.
@@ -186,6 +219,37 @@ impl<T: Mul<T, T> + Add<T, T> + Clone> Mat2<T> {
         let r = self.data[i].iter().enumerate().map(|(i, x)| x.clone() * a + self.data[j][i])
                     .to_owned_vec();
         self.set_row(j, r);
+    }
+}
+
+impl<T: fmt::Default+Mul<T, T> + Add<T, T> + Div<T, T> + Zero + One + Eq + Clone> Mat2<T> {
+    /// Do Gauss-Jordan elimination on this matrix to convert it into Reduced Row-Echelon Form.
+    pub fn reduce(&mut self) {
+        // translation of pseudocode at http://linear.ups.edu/html/section-RREF.html
+        let (m, n, mut r) = (self.n, self.m, 0);
+        for j in range(0, n) {
+            let i = r + 1;
+
+            if self.column_iter(j).skip(i).all(|e| *e == Zero::zero()) {
+                debug!("reduce: matrix is zeros in col {} from row {}", j, i);
+                continue
+            }
+
+            if i < m+1 {
+                r += 1;
+                self.swap_rows(i, r);
+                let scale_factor = one::<T>() / *self.get(r, j);
+                self.scale_row(r, scale_factor);
+
+                for k in range(1, m) {
+                    debug!("m={}", m);
+                    if (k == r) { break; }
+                    let cur_item = self.get(r, j);
+                    let to_zero = self.get(r, i);
+                    debug!("cur_item={:?}, to_zero={:?}", cur_item, to_zero);
+                }
+            }
+        }
     }
 }
 
@@ -535,5 +599,25 @@ mod tests {
                 ~[0, 0, 0],
             ]).unwrap();
         assert!(x.is_rref());
+    }
+
+    #[test]
+    fn test_reduce() {
+        let mut x = Mat2::from_vec(
+            ~[
+                ~[1f64, 2.0, 3.0],
+                ~[1.0, 5.0, 6.0],
+                ~[1.0, 8.0, 9.0]
+            ]).unwrap();
+        println!("{}", x);
+        x.reduce();
+        let mut x = Mat2::from_vec(
+            ~[
+                ~[1f64, 0.0, 3.0],
+                ~[1.0, 0.0, 6.0],
+                ~[1.0, 0.0, 9.0]
+            ]).unwrap();
+        println!("{}", x);
+        x.reduce();
     }
 }
